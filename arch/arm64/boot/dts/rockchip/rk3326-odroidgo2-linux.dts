@@ -103,6 +103,7 @@
                     joypad driver is poll-device driver.
                     poll-device is does not support wakeup-source.
 		*/
+/*		
                 sw1 {
                         gpios = <&gpio1 RK_PB4 GPIO_ACTIVE_LOW>;
                         label = "GPIO DPAD-UP";
@@ -123,6 +124,36 @@
                         label = "GPIO DPAD-RIGHT";
                         linux,code = <BTN_DPAD_RIGHT>; // 0x223
                 };
+*/
+                sw1 {
+                        gpios = <&gpio1 RK_PB4 GPIO_ACTIVE_LOW>;
+                        label = "GPIO DPAD-UP";
+                        linux,code = <ABS_HAT0Y>; 
+						linux,input-type = <EV_ABS>;
+					linux,input-value = <0xffffffff>; /* -1 */ 
+                };
+                sw2 {
+                        gpios = <&gpio1 RK_PB5 GPIO_ACTIVE_LOW>;
+                        label = "GPIO DPAD-DOWN";
+                        linux,code = <ABS_HAT0Y>;         
+                        linux,input-type = <EV_ABS>;
+                        linux,input-value = <1>;  
+                };
+                sw3 {
+                        gpios = <&gpio1 RK_PB6 GPIO_ACTIVE_LOW>;
+                        label = "GPIO DPAD-LEFT";
+                        linux,code = <ABS_HAT0X>;
+                        linux,input-type = <EV_ABS>;
+                        linux,input-value = <0xffffffff>; /* -1 */
+                };
+                sw4 {
+                        gpios = <&gpio1 RK_PB7 GPIO_ACTIVE_LOW>;
+                        label = "GPIO DPAD-RIGHT";
+                        linux,code = <ABS_HAT0X>;
+                        linux,input-type = <EV_ABS>;
+                        linux,input-value = <1>; 
+                };
+	
                 sw5 {
                         gpios = <&gpio1 RK_PA2 GPIO_ACTIVE_LOW>;
                         label = "GPIO KEY BTN-A";

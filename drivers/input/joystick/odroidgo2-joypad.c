@@ -65,6 +65,8 @@ struct bt_gpio {
 	int num;
 	/* report type */
 	int report_type;
+	/* report value by trngaje */
+	int report_value;
 	/* report linux code */
 	int linux_code;
 	/* prev button value */
@@ -401,10 +403,20 @@ static void joypad_gpio_check(struct input_polled_dev *poll_dev)
 		}
 		value = gpio_get_value(gpio->num);
 		if (value != gpio->old_value) {
-			input_event(poll_dev->input,
-				gpio->report_type,
-				gpio->linux_code,
-				(value == gpio->active_level) ? 1 : 0);
+			if (gpio->report_type != EV_ABS)
+			{			
+				input_event(poll_dev->input,
+					gpio->report_type,
+					gpio->linux_code,
+					(value == gpio->active_level) ? 1 : 0);
+			}
+			else
+			{
+				input_event(poll_dev->input,
+					gpio->report_type,
+					gpio->linux_code,
+					(value == gpio->active_level) ? gpio->report_value : 0);
+			}
 			gpio->old_value = value;
 		}
 	}
@@ -633,6 +645,10 @@ static int joypad_gpio_setup(struct device *dev, struct joypad *joypad)
 		if (of_property_read_u32(pp, "linux,input-type",
 				&gpio->report_type))
 			gpio->report_type = EV_KEY;
+
+		// added by trngaje
+		of_property_read_u32(pp, "linux,input-value",
+                                &gpio->report_value);
 	}
 	if (nbtn == 0)
 		return -EINVAL;
@@ -689,8 +705,18 @@ static int joypad_input_setup(struct device *dev, struct joypad *joypad)
 			joypad->bt_adc_deadzone);
 	}
 
+	// add for dpad hat by trngaje
+	input_set_abs_params(input, ABS_HAT0X, -1, 1, 0, 0);
+	input_set_abs_params(input, ABS_HAT0Y, -1, 1, 0, 0);
+
 	/* GPIO key setup */
 	__set_bit(EV_KEY, input->evbit);
+
+	//input_set_capability(input, EV_KEY, BTN_DPAD_UP);
+	//input_set_capability(input, EV_KEY, BTN_DPAD_DOWN);
+	//input_set_capability(input, EV_KEY, BTN_DPAD_LEFT);
+	//input_set_capability(input, EV_KEY, BTN_DPAD_RIGHT);
+
 	for(nbtn = 0; nbtn < joypad->bt_gpio_count; nbtn++) {
 		struct bt_gpio *gpio = &joypad->gpios[nbtn];
 		input_set_capability(input, gpio->report_type,
