@@ -14,7 +14,7 @@
 
 / {
 	model = "Hardkernel ODROID-GO2";
-	compatible = "rockchip,rk3326-odroidgo2-linux", "rockchip,rk3326";
+	compatible = "rockchip,rk3326-odroidgo2-linux-v11", "rockchip,rk3326";
 
 	chosen {
                 bootargs = "";
@@ -123,7 +123,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
+/*		gpio = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>; */
 		enable-active-high;
 		regulator-always-on;
 		vin-supply = <&vccsys>;
@@ -696,6 +696,19 @@
 				};
 			};
 
+			/* Rev 1.1 WIFI Power */
+			vcc_wifi: LDO_REG9 {
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+
+				regulator-name = "vcc_wifi";
+				regulator-state-mem {
+					regulator-off-in-suspend;
+					regulator-suspend-microvolt = <3300000>;
+				};
+			};
 
 			dcdc_boost: BOOST {
 				regulator-always-on;
