@@ -292,20 +292,30 @@ static int set_vout_init_mode(void)
 	int ret = 0;
 
 #if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#if defined(CONFIG_AMLOGIC_LCD)
+	snprintf(vout_mode_uboot, VMODE_NAME_LEN_MAX, "%s", "panel");
+#else
 	strncpy(vout_mode_uboot,
 			(vout_get_hpd_state() || !cvbs_cable_connected()) ?
 			hdmimode : cvbsmode,
 			sizeof(vout_mode_uboot));
 #endif
-
+#endif
 	snprintf(init_mode_str, VMODE_NAME_LEN_MAX, "%s", vout_mode_uboot);
 	vout_init_vmode = validate_vmode(vout_mode_uboot);
 	if (vout_init_vmode >= VMODE_MAX) {
 #if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#if defined(CONFIG_AMLOGIC_LCD)
+		VOUTERR("no matched vout mode %s, force to set panel\n",
+			vout_mode_uboot);
+		snprintf(init_mode_str, VMODE_NAME_LEN_MAX, "%s", "panel");
+		vout_init_vmode = validate_vmode("panel");
+#else
 		VOUTERR("no matched vout mode %s, force to set 1080p60hz\n",
 			vout_mode_uboot);
 		snprintf(init_mode_str, VMODE_NAME_LEN_MAX, "%s", "1080p60hz");
 		vout_init_vmode = validate_vmode("1080p60hz");
+#endif
 #else
 		VOUTERR("no matched vout_init mode %s, force to invalid\n",
 			vout_mode_uboot);
@@ -941,6 +951,11 @@ static int refresh_tvout_mode(void)
 		snprintf(cur_mode_str, VMODE_NAME_LEN_MAX, "%s", cvbsmode);
 	}
 
+#if defined(CONFIG_AMLOGIC_LCD)
+	cur_vmode = validate_vmode("panel");
+	snprintf(cur_mode_str, VMODE_NAME_LEN_MAX, "%s", "panel");
+#endif
+
 	/* update current vout mode string */
 	memset(local_name, 0, sizeof(local_name));
 	strncpy(local_name, cur_mode_str, VMODE_NAME_LEN_MAX);
@@ -949,10 +964,17 @@ static int refresh_tvout_mode(void)
 
 	if (cur_vmode >= VMODE_MAX) {
 #if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#if defined(CONFIG_AMLOGIC_LCD)
+		VOUTERR("%s: no matched vmode: %s, force to set panel\n",
+			__func__, cur_mode_str);
+		cur_vmode = validate_vmode("panel");
+		snprintf(cur_mode_str, VMODE_NAME_LEN_MAX, "%s", "panel");
+#else
 		VOUTERR("%s: no matched vmode: %s, force to set 1080p60hz\n",
 			__func__, cur_mode_str);
 		cur_vmode = validate_vmode("1080p60hz");
 		snprintf(cur_mode_str, VMODE_NAME_LEN_MAX, "%s", "1080p60hz");
+#endif
 #else
 		VOUTERR("%s: no matched cur_mode: %s, force to invalid\n",
 			__func__, cur_mode_str);
