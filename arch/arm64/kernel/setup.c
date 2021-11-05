@@ -232,6 +232,10 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
 		system_rev = 0x0400;
 		__odroid_model = BOARD_ODROIDN2;
 		__odroid_amlogic_usb3 = true;
+	} else if (!strcmp(machine_name, "Hardkernel ODROID-GOU")) {
+		system_rev = 0x0800;
+		__odroid_model = BOARD_ODROIDGOU;
+		__odroid_amlogic_usb3 = true;
 	} else if (!strcmp(machine_name, "Hardkernel ODROID-C4")) {
 		system_rev = 0x0500;
 		__odroid_model = BOARD_ODROIDC4;

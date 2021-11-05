@@ -4,6 +4,7 @@
 #include <linux/types.h>
 
 #define BOARD_ODROIDN2			0x09221000
+#define BOARD_ODROIDGOU			0x09222000
 #define BOARD_ODROIDC4			0x09051000
 #define BOARD_ODROIDHC4			0x09052000
 
@@ -19,6 +20,7 @@ extern bool odroid_amlogic_usb3(void);
 #endif
 
 #define board_is_odroidn2()	__board_is_odroid(BOARD_ODROIDN2)
+#define board_is_odroidgou()	__board_is_odroid(BOARD_ODROIDGOU)
 #define board_is_odroidc4()	__board_is_odroid(BOARD_ODROIDC4)
 #define board_is_odroidhc4()	__board_is_odroid(BOARD_ODROIDHC4)
 
