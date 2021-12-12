@@ -32,7 +32,7 @@
 #define RTL_ROM_LMP_8723A	0x1200
 #define RTL_ROM_LMP_8723B	0x8723
 #define RTL_ROM_LMP_8821A	0x8821
-#define RTL_ROM_LMP_8761A	0x8761
+#define RTL_ROM_LMP_8761B	0x8761
 #define RTL_ROM_LMP_8822B	0x8822
 #define RTL_CONFIG_MAGIC	0x8723ab55
 
@@ -132,11 +132,11 @@ static const struct id_table ic_id_table[] = {
 	  .cfg_name = "rtl_bt/rtl8821c_config" },
 
 	/* 8761A */
-	{ IC_MATCH_FL_LMPSUBV, RTL_ROM_LMP_8761A, 0x0,
-	  .config_needed = false,
+	{ IC_MATCH_FL_LMPSUBV, RTL_ROM_LMP_8761B, 0x0,
+	  .config_needed = true,
 	  .has_rom_version = true,
-	  .fw_name  = "rtl_bt/rtl8761a_fw.bin",
-	  .cfg_name = "rtl_bt/rtl8761a_config" },
+	  .fw_name  = "rtl_bt/rtl8761b_fw.bin",
+	  .cfg_name = "rtl_bt/rtl8761b_config" },
 
 	/* 8822B */
 	{ IC_INFO(RTL_ROM_LMP_8822B, 0xb),
@@ -224,7 +224,7 @@ static int rtlbt_parse_firmware(struct hci_dev *hdev,
 		{ RTL_ROM_LMP_8723A, 0 },
 		{ RTL_ROM_LMP_8723B, 1 },
 		{ RTL_ROM_LMP_8821A, 2 },
-		{ RTL_ROM_LMP_8761A, 3 },
+		{ RTL_ROM_LMP_8761B, 14 },
 		{ RTL_ROM_LMP_8822B, 8 },
 		{ RTL_ROM_LMP_8723B, 9 },	/* 8723D */
 		{ RTL_ROM_LMP_8821A, 10 },	/* 8821C */
@@ -608,7 +608,7 @@ int btrtl_download_firmware(struct hci_dev *hdev,
 		return btrtl_setup_rtl8723a(hdev, btrtl_dev);
 	case RTL_ROM_LMP_8723B:
 	case RTL_ROM_LMP_8821A:
-	case RTL_ROM_LMP_8761A:
+	case RTL_ROM_LMP_8761B:
 	case RTL_ROM_LMP_8822B:
 		return btrtl_setup_rtl8723b(hdev, btrtl_dev);
 	default:
@@ -756,6 +756,8 @@ MODULE_FIRMWARE("rtl_bt/rtl8723ds_fw.bin");
 MODULE_FIRMWARE("rtl_bt/rtl8723ds_config.bin");
 MODULE_FIRMWARE("rtl_bt/rtl8761a_fw.bin");
 MODULE_FIRMWARE("rtl_bt/rtl8761a_config.bin");
+MODULE_FIRMWARE("rtl_bt/rtl8761b_fw.bin");
+MODULE_FIRMWARE("rtl_bt/rtl8761b_config.bin");
 MODULE_FIRMWARE("rtl_bt/rtl8821a_fw.bin");
 MODULE_FIRMWARE("rtl_bt/rtl8821a_config.bin");
 MODULE_FIRMWARE("rtl_bt/rtl8822b_fw.bin");
