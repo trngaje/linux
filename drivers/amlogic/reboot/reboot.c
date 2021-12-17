@@ -36,7 +36,7 @@
 
 static void __iomem *reboot_reason_vaddr;
 
-#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON) && !defined(CONFIG_MFD_RK808)
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
 
@@ -125,7 +125,7 @@ void meson_common_restart(char mode, const char *cmd)
 						(u64)reboot_reason);
 }
 
-#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON) && !defined(CONFIG_MFD_RK808)
 void odroid_card_reset(void)
 {
 	int ret = 0;
@@ -187,7 +187,7 @@ void odroid_card_reset(void)
 
 static void do_aml_restart(enum reboot_mode reboot_mode, const char *cmd)
 {
-#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON) && !defined(CONFIG_MFD_RK808)
 	odroid_card_reset();
 #endif
 	meson_common_restart(reboot_mode, cmd);
@@ -195,7 +195,7 @@ static void do_aml_restart(enum reboot_mode reboot_mode, const char *cmd)
 
 static void do_aml_poweroff(void)
 {
-#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)&& !defined(CONFIG_MFD_RK808)
 	odroid_card_reset();
 #endif
 	/* TODO: Add poweroff capability */
@@ -233,7 +233,7 @@ DEVICE_ATTR(reboot_reason, 0444, reboot_reason_show, NULL);
 
 static int aml_restart_probe(struct platform_device *pdev)
 {
-#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON) && !defined(CONFIG_MFD_RK808)
 	struct device_node *of_node;
 #endif
 	u32 id;
@@ -258,7 +258,7 @@ static int aml_restart_probe(struct platform_device *pdev)
 		device_create_file(&pdev->dev, &dev_attr_reboot_reason);
 	}
 
-#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON) && !defined(CONFIG_MFD_RK808)
 	of_node = pdev->dev.of_node;
 	sd_volsw_gpio = 0;
 	sd_power_gpio = 0;
