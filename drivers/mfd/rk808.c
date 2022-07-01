@@ -1491,7 +1491,6 @@ static void rk8xx_shutdown(struct i2c_client *client)
 
 	switch (rk808->variant) {
 	case RK817_ID:
-//		regmap_write(rk808->regmap, RK817_POWER_EN_REG(0), value | 0xf0);
 		regmap_write(rk808->regmap, RK817_POWER_EN_REG(1), 0x00 | 0xf0);
 		regmap_write(rk808->regmap, RK817_POWER_EN_REG(2), 0x00 | 0xf0);
 		regmap_write(rk808->regmap, RK817_POWER_EN_REG(3), 0x00 | 0xf0);

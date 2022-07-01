@@ -157,6 +157,7 @@ static const char *bat_status[] = {
 struct rk818_battery {
 	struct platform_device		*pdev;
 	struct rk808			*rk818;
+	struct i2c_client		*client;
 	struct regmap			*regmap;
 	struct device			*dev;
 	struct power_supply		*bat;
@@ -1265,7 +1266,7 @@ static void rk818_bat_first_pwron(struct rk818_battery *di)
 	di->dsoc = di->rsoc;
 	di->is_first_on = true;
 
-	BAT_INFO("first on: dsoc=%d, rsoc=%d cap=%d, fcc=%d, ov=%d\n",
+	DBG("first on: dsoc=%d, rsoc=%d cap=%d, fcc=%d, ov=%d\n",
 		 di->dsoc, di->rsoc, di->nac, di->fcc, ocv_vol);
 }
 
@@ -1530,7 +1531,7 @@ static void rk818_bat_internal_calib(struct work_struct *work)
 
 	/* calib voltage kb */
 	rk818_bat_init_voltage_kb(di);
-	BAT_INFO("caltimer: ioffset=0x%x, coffset=0x%x, poffset=%d\n",
+	DBG("caltimer: ioffset=0x%x, coffset=0x%x, poffset=%d\n",
 		 ioffset, rk818_bat_get_coffset(di), di->poffset);
 }
 
@@ -2544,9 +2545,6 @@ static void rk818_bat_power_supply_changed(struct rk818_battery *di)
 	else if (di->dsoc < 0)
 		di->dsoc = 0;
 
-	if (di->dsoc == old_soc)
-		return;
-
 	thermal = rk818_bat_read(di, RK818_THERMAL_REG);
 	status = rk818_bat_read(di, RK818_SUP_STS_REG);
 	status = (status & CHRG_STATUS_MSK) >> 4;
@@ -2559,12 +2557,18 @@ static void rk818_bat_power_supply_changed(struct rk818_battery *di)
 		 di->current_avg, di->remain_cap, di->fcc, bat_status[status],
 		 !!(thermal & HOTDIE_STS));
 
-	BAT_INFO("dl=%d, rl=%d, v=%d, halt=%d, halt_n=%d, max=%d, "
+	DBG("dl=%d, rl=%d, v=%d, halt=%d, halt_n=%d, max=%d, "
 		 "init=%d, sw=%d, calib=%d, below0=%d, force=%d\n",
 		 di->dbg_pwr_dsoc, di->dbg_pwr_rsoc, di->dbg_pwr_vol,
 		 di->is_halt, di->halt_cnt, di->is_max_soc_offset,
 		 di->is_initialized, di->is_sw_reset, di->is_ocv_calib,
 		 di->dbg_cap_low0, di->is_force_calib);
+
+	/* system poweroff condition */
+	if ((di->voltage_avg < di->pdata->pwroff_vol) &&
+			(di->remain_cap < 200) &&
+			(status == 0))
+		rk_send_power_key(1);
 }
 
 static u8 rk818_bat_check_reboot(struct rk818_battery *di)
@@ -3403,6 +3407,7 @@ static int rk818_battery_probe(struct platform_device *pdev)
 			of_match_device(rk818_battery_of_match, &pdev->dev);
 	struct rk818_battery *di;
 	struct rk808 *rk818 = dev_get_drvdata(pdev->dev.parent);
+	struct i2c_client *client = rk818->i2c;
 	int ret;
 
 	if (!of_id) {
@@ -3410,11 +3415,12 @@ static int rk818_battery_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	di = devm_kzalloc(&pdev->dev, sizeof(*di), GFP_KERNEL);
+	di = devm_kzalloc(&client->dev, sizeof(*di), GFP_KERNEL);
 	if (!di)
 		return -ENOMEM;
 
 	di->rk818 = rk818;
+	di->client = client;
 	di->pdev = pdev;
 	di->dev = &pdev->dev;
 	di->regmap = rk818->regmap;

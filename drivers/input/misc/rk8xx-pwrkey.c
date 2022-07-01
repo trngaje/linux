@@ -32,6 +32,34 @@ struct rk8xx_pwrkey {
 	int report_key;
 };
 
+static struct input_dev *sinput_dev;
+
+void rk_send_power_key(int state)
+{
+	if (!sinput_dev)
+		return;
+	if (state) {
+		input_report_key(sinput_dev, KEY_POWER, 1);
+		input_sync(sinput_dev);
+	} else {
+		input_report_key(sinput_dev, KEY_POWER, 0);
+		input_sync(sinput_dev);
+	}
+}
+EXPORT_SYMBOL(rk_send_power_key);
+
+void rk_send_wakeup_key(void)
+{
+	if (!sinput_dev)
+		return;
+
+	input_report_key(sinput_dev, KEY_WAKEUP, 1);
+	input_sync(sinput_dev);
+	input_report_key(sinput_dev, KEY_WAKEUP, 0);
+	input_sync(sinput_dev);
+}
+EXPORT_SYMBOL(rk_send_wakeup_key);
+
 static irqreturn_t rk8xx_pwrkey_irq_falling(int irq, void *data)
 {
 	struct rk8xx_pwrkey *pwr = data;
@@ -125,6 +153,7 @@ static int rk8xx_pwrkey_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Can't register power button: %d\n", err);
 		return err;
 	}
+	sinput_dev = pwrkey->input_dev;
 
 	return 0;
 }

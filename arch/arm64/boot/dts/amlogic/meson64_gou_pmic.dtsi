@@ -232,7 +232,7 @@
 			max_chrg_voltage = <4500>;
 			sleep_enter_current = <300>;
 			sleep_exit_current = <300>;
-			power_off_thresd = <3500>;
+			power_off_thresd = <3400>;
 			zero_algorithm_vol = <3700>;
 			fb_temperature = <105>;
 			sample_res = <10>;
@@ -240,7 +240,7 @@
 			energy_mode = <0>;
 			monitor_sec = <5>;
 			virtual_power = <0>;
-			power_dc2otg = <1>;
+			power_dc2otg = <0>;
 			otg_switch-supply = <&rk818_otg_switch>;
 			otg5v_suspend_enable = <0>;
 			dc_det_gpio = <&gpio_ao GPIOAO_8 GPIO_ACTIVE_LOW>;
