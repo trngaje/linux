@@ -135,6 +135,10 @@ struct charger_platform_data {
 	int ts2_vol_multi;
 	struct temp_chrg_table *tc_table;
 	u32 tc_count;
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	int chg_led_pin;
+	bool chg_led_on;
+#endif
 };
 
 struct rk818_charger {
@@ -158,6 +162,10 @@ struct rk818_charger {
 	struct delayed_work finish_sig_work;
 	struct delayed_work irq_work;
 	struct delayed_work ts2_vol_work;
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	struct workqueue_struct *led_wq;
+	struct delayed_work led_work;
+#endif
 	struct notifier_block bc_nb;
 	struct notifier_block cable_cg_nb;
 	struct notifier_block cable_host_nb;
@@ -747,6 +755,30 @@ static void rk818_cg_set_otg_power(struct rk818_charger *cg, int state)
 	}
 }
 
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+static void rk818_cg_led_worker(struct work_struct *work)
+{
+	struct rk818_charger *cg = container_of(work,
+			struct rk818_charger, led_work.work);
+
+	/* battery status check */
+	if (rk818_cg_online(cg)) {
+		if (cg->prop_status == POWER_SUPPLY_STATUS_CHARGING)
+			gpio_set_value(cg->pdata->chg_led_pin,
+					!gpio_get_value(cg->pdata->chg_led_pin));
+		else
+			gpio_set_value(cg->pdata->chg_led_pin,
+					cg->pdata->chg_led_on);
+	}
+	else
+		gpio_set_value(cg->pdata->chg_led_pin,
+				!cg->pdata->chg_led_on);
+
+	queue_delayed_work(cg->led_wq, &cg->led_work,
+		msecs_to_jiffies(1000));
+}
+#endif
+
 static enum charger_t rk818_cg_get_dc_state(struct rk818_charger *cg)
 {
 	int level;
@@ -1154,6 +1186,28 @@ static int rk818_cg_init_dc(struct rk818_charger *cg)
 		dev_err(cg->dev, "failed to set gpio input\n");
 		return ret;
 	}
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	if (cg->pdata->chg_led_pin) {
+		ret = devm_gpio_request(cg->dev,
+					cg->pdata->chg_led_pin,
+					"rk817_chg_led");
+		if (ret < 0)
+			dev_err(cg->dev, "failed to request gpio %d\n",
+				cg->pdata->chg_led_pin);
+		else
+			gpio_direction_output(cg->pdata->chg_led_pin,
+					     !cg->pdata->chg_led_on);
+	}
+
+	cg->led_wq = alloc_ordered_workqueue("%s",
+				WQ_MEM_RECLAIM | WQ_FREEZABLE,
+				"rk817-led-wq");
+	INIT_DELAYED_WORK(&cg->led_work, rk818_cg_led_worker);
+
+	queue_delayed_work(cg->led_wq, &cg->led_work,
+		msecs_to_jiffies(500));
+#endif
+
 
 	level = gpio_get_value(cg->pdata->dc_det_pin);
 	if (level == cg->pdata->dc_det_level)
@@ -1668,6 +1722,22 @@ static int rk818_cg_parse_dt(struct rk818_charger *cg)
 			return -EINVAL;
 		}
 	}
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	if (!of_find_property(np, "chg_led_gpio", &ret)) {
+		CG_INFO("not support charge led\n");
+		pdata->chg_led_pin = 0;
+	} else {
+		pdata->chg_led_pin = of_get_named_gpio_flags(np,
+						"chg_led_gpio",
+						0, &flags);
+		if (gpio_is_valid(pdata->chg_led_pin)) {
+			CG_INFO("support charge led\n");
+			pdata->chg_led_on =
+				(flags & OF_GPIO_ACTIVE_LOW) ? 0 : 1;
+		}
+	}
+#endif
+
 
 	ret = parse_temperature_chrg_table(cg, np);
 	if (ret)
@@ -1775,6 +1845,11 @@ notify_fail:
 	destroy_workqueue(cg->dc_charger_wq);
 	destroy_workqueue(cg->finish_sig_wq);
 
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	cancel_delayed_work_sync(&cg->led_work);
+	destroy_workqueue(cg->led_wq);
+#endif
+
 	if (cg->pdata->extcon) {
 		extcon_unregister_notifier(cg->cable_edev, EXTCON_CHG_USB_SDP,
 					   &cg->cable_cg_nb);
@@ -1820,6 +1895,11 @@ static void rk818_charger_shutdown(struct platform_device *pdev)
 	flush_workqueue(cg->usb_charger_wq);
 	flush_workqueue(cg->dc_charger_wq);
 	flush_workqueue(cg->finish_sig_wq);
+
+#if defined(CONFIG_ARCH_MESON64_ODROID_COMMON)
+	cancel_delayed_work_sync(&cg->led_work);
+	destroy_workqueue(cg->led_wq);
+#endif
 
 	if (cg->pdata->extcon) {
 		extcon_unregister_notifier(cg->cable_edev, EXTCON_CHG_USB_SDP,
