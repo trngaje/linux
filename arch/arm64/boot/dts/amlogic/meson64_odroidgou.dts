@@ -422,7 +422,7 @@
 		sys_led {
 			label="sys_led";
 			gpios=<&gpio_ao GPIOAO_11 GPIO_ACTIVE_HIGH>;
-			default-state ="on";
+			linux,default-trigger = "heartbeat";
 		};
 	};
 }; /* end of / */
