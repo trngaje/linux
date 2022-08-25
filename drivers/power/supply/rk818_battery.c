@@ -789,13 +789,9 @@ static bool is_rk818_bat_first_pwron(struct rk818_battery *di)
 	u8 buf;
 
 	buf = rk818_bat_read(di, RK818_GGSTS_REG);
-	if (buf & BAT_CON) {
-		buf &= ~BAT_CON;
-		rk818_bat_write(di, RK818_GGSTS_REG, buf);
-		return true;
-	}
-
-	return false;
+	buf &= ~BAT_CON;
+	rk818_bat_write(di, RK818_GGSTS_REG, buf);
+	return true;
 }
 
 static u8 rk818_bat_get_pwroff_min(struct rk818_battery *di)
@@ -2551,7 +2547,7 @@ static void rk818_bat_power_supply_changed(struct rk818_battery *di)
 	old_soc = di->dsoc;
 	di->last_dsoc = di->dsoc;
 	power_supply_changed(di->bat);
-	BAT_INFO("changed: dsoc=%d, rsoc=%d, v=%d, ov=%d c=%d, "
+	DBG("changed: dsoc=%d, rsoc=%d, v=%d, ov=%d c=%d, "
 		 "cap=%d, f=%d, st=%s, hotdie=%d\n",
 		 di->dsoc, di->rsoc, di->voltage_avg, di->voltage_ocv,
 		 di->current_avg, di->remain_cap, di->fcc, bat_status[status],
@@ -2565,8 +2561,8 @@ static void rk818_bat_power_supply_changed(struct rk818_battery *di)
 		 di->dbg_cap_low0, di->is_force_calib);
 
 	/* system poweroff condition */
-	if ((di->voltage_avg < di->pdata->pwroff_vol) &&
-			(di->remain_cap < 200) &&
+	if (((di->remain_cap < 40) ||
+		(di->voltage_avg < di->pdata->pwroff_vol)) &&
 			(status == 0))
 		rk_send_power_key(1);
 }
@@ -3065,6 +3061,7 @@ static void rk818_battery_work(struct work_struct *work)
 			   msecs_to_jiffies(di->monitor_ms));
 }
 
+#ifndef CONFIG_ARCH_MESON64_ODROID_COMMON
 static irqreturn_t rk818_vb_low_irq(int irq, void *bat)
 {
 	struct rk818_battery *di = (struct rk818_battery *)bat;
@@ -3076,6 +3073,7 @@ static irqreturn_t rk818_vb_low_irq(int irq, void *bat)
 
 	return IRQ_HANDLED;
 }
+#endif
 
 static void rk818_bat_init_sysfs(struct rk818_battery *di)
 {
@@ -3090,6 +3088,7 @@ static void rk818_bat_init_sysfs(struct rk818_battery *di)
 	}
 }
 
+#ifndef CONFIG_ARCH_MESON64_ODROID_COMMON
 static int rk818_bat_init_irqs(struct rk818_battery *di)
 {
 	struct rk808 *rk818 = di->rk818;
@@ -3114,6 +3113,7 @@ static int rk818_bat_init_irqs(struct rk818_battery *di)
 
 	return 0;
 }
+#endif
 
 static void rk818_bat_init_info(struct rk818_battery *di)
 {
@@ -3437,12 +3437,13 @@ static int rk818_battery_probe(struct platform_device *pdev)
 		dev_err(di->dev, "no battery, virtual power mode\n");
 	}
 
+#ifndef CONFIG_ARCH_MESON64_ODROID_COMMON
 	ret = rk818_bat_init_irqs(di);
 	if (ret != 0) {
 		dev_err(di->dev, "rk818 bat init irqs failed!\n");
 		return ret;
 	}
-
+#endif
 	ret = rk818_bat_init_power_supply(di);
 	if (ret) {
 		dev_err(di->dev, "rk818 power supply register failed!\n");
