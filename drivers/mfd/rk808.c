@@ -118,9 +118,7 @@ static void do_aml_poweroff(void)
 	psci_fn_smc(0x82000042, 1, 0, 0);
 	psci_fn_smc(0x84000008, 0, 0, 0);
 }
-
 #endif
-
 
 static int rk808_shutdown(struct regmap *regmap)
 {
@@ -152,10 +150,15 @@ static int rk818_shutdown(struct regmap *regmap)
 					 DEV_OFF, DEV_OFF);
 	}
 	else {
-		do_aml_poweroff();
+		ret = regmap_update_bits(regmap,
+					 RK818_ON_SOURCE_REG,
+					 (0x1 << 4), (0x1 << 4));
+
 		ret = regmap_update_bits(regmap,
 					 RK818_DEVCTRL_REG,
 					 DEV_OFF_RST, DEV_OFF_RST);
+		mdelay(50);
+		do_aml_poweroff();
 	}
 	return ret;
 }
@@ -992,7 +995,7 @@ static void rk808_syscore_shutdown(void)
 			dev_err(&rk808_i2c_client->dev,
 				"System power off error!\n");
 		mdelay(10);
-		dev_info(&rk808_i2c_client->dev,
+		dev_err(&rk808_i2c_client->dev,
 			 "Cpu should never reach here, stop!\n");
 		while (1)
 			;
@@ -1543,7 +1546,6 @@ static void rk8xx_shutdown(struct i2c_client *client)
 				rk808->variant);
 		}
 	}
-
 	return;
 }
 
