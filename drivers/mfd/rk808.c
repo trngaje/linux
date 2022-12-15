@@ -144,12 +144,7 @@ static int rk818_shutdown(struct regmap *regmap)
 {
 	int ret;
 
-	if (system_state == SYSTEM_POWER_OFF) {
-		ret = regmap_update_bits(regmap,
-					 RK818_DEVCTRL_REG,
-					 DEV_OFF, DEV_OFF);
-	}
-	else {
+	if (system_state == SYSTEM_RESTART) {
 		ret = regmap_update_bits(regmap,
 					 RK818_ON_SOURCE_REG,
 					 (0x1 << 4), (0x1 << 4));
@@ -159,6 +154,11 @@ static int rk818_shutdown(struct regmap *regmap)
 					 DEV_OFF_RST, DEV_OFF_RST);
 		mdelay(50);
 		do_aml_poweroff();
+	}
+	else {
+		ret = regmap_update_bits(regmap,
+					 RK818_DEVCTRL_REG,
+					 DEV_OFF, DEV_OFF);
 	}
 	return ret;
 }
@@ -1532,7 +1532,7 @@ static void rk8xx_shutdown(struct i2c_client *client)
 {
 	struct rk808 *rk808 = i2c_get_clientdata(client);
 
-	if (system_state == SYSTEM_POWER_OFF) {
+	if (system_state != SYSTEM_RESTART) {
 		dev_info(&client->dev, "%s[%d]Chip id: 0x%lx\n",__func__,__LINE__, rk808->variant);
 
 		switch (rk808->variant) {
@@ -1553,6 +1553,8 @@ static int rk808_suspend(struct device *dev)
 {
 	int i, ret;
 	struct rk808 *rk808 = i2c_get_clientdata(rk808_i2c_client);
+
+	rk818_shutdown(rk808 -> regmap);
 
 	for (i = 0; i < suspend_reg_num; i++) {
 		ret = regmap_update_bits(rk808->regmap,
